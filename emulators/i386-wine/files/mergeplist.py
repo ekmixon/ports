@@ -62,9 +62,11 @@ class OrderedSet(collections.MutableSet):
         return key
 
     def __repr__(self):
-        if not self:
-            return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, list(self))
+        return (
+            '%s(%r)' % (self.__class__.__name__, list(self))
+            if self
+            else f'{self.__class__.__name__}()'
+        )
 
     def __eq__(self, other):
         if isinstance(other, OrderedSet):
@@ -111,16 +113,18 @@ def gen_list(plists):
             # Find which of the plists have non-common lines
             lines = {}
             for i in range(plists_len):
-                while len(plists[i]) and not all(plists[i].peek() in plist for plist in plists):
+                while len(plists[i]) and any(
+                    plists[i].peek() not in plist for plist in plists
+                ):
                     lines.setdefault(plists[i].pop(), []).append(names[i])
             for line in sorted(lines.keys()):
                 suffix = lines[line][0].split('-', 2)
                 suffix = len(suffix) == 2 and suffix[-1]
                 if suffix and all(name.split('-', 2)[-1] == suffix for name in lines[line]):
-                    yield "%%" + suffix + "%%" + line
+                    yield f"%%{suffix}%%{line}"
                 else:
                     for name in lines[line]:
-                        yield "%%" + name + "%%" + line
+                        yield f"%%{name}%%{line}"
         empty = sum(len(plist) == 0 for plist in plists)
 
 if __name__ == '__main__':

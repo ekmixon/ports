@@ -41,12 +41,13 @@ def _makeDeviceInfo(native_device_info):
 		path=native_device_info.path.decode('ascii'),
 		vendor_id=hex(native_device_info.vendor_id)[2:].zfill(4),
 		product_id=hex(native_device_info.product_id)[2:].zfill(4),
-		serial=native_device_info.serial if native_device_info.serial else None,
+		serial=native_device_info.serial or None,
 		release=hex(native_device_info.release)[2:],
 		manufacturer=native_device_info.manufacturer,
 		product=native_device_info.product,
 		interface=native_device_info.interface,
-		driver=None)
+		driver=None,
+	)
 
 _native.hid_init.argtypes = None
 _native.hid_init.restype = _C.c_int
@@ -143,9 +144,7 @@ def read(device_handle, bytes_count, timeout_ms=-1):
 	bytes_read = _native.hid_read_timeout(device_handle, out_buffer, bytes_count, timeout_ms)
 	if bytes_read == -1:
 		return None
-	if bytes_read == 0:
-		return b''
-	return out_buffer[:bytes_read]
+	return b'' if bytes_read == 0 else out_buffer[:bytes_read]
 
 def send_feature_report(device_handle, data, report_number=None):
 	if report_number is not None:

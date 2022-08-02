@@ -41,9 +41,8 @@ def getcmdout(cmdline):
 	return results
 
 def readfile(filename):
-	file = open(filename)
-	result = file.readlines()
-	file.close()
+	with open(filename) as file:
+		result = file.readlines()
 	return result
 
 def filter(lines, regobj):
@@ -59,9 +58,7 @@ def filter(lines, regobj):
 	return results
 
 gnomeports = getcmdout('cd /usr/ports && make search key=gnome | grep ^Path:')
-newgnomeports = []
-for i in gnomeports:
-	newgnomeports.append(string.split(i)[1])
+newgnomeports = [string.split(i)[1] for i in gnomeports]
 gnomeports = newgnomeports
 newgnomeports = []
 
@@ -69,8 +66,7 @@ regobj = re.compile('^@dirrm (?P<dirname>\S+).*$')
 for portdir in gnomeports:
 	try:
 		lines = readfile(os.path.join(portdir, 'pkg-plist'))
-		lines = list(filter(lines, regobj))
-		if len(lines) > 0:
+		if lines := list(filter(lines, regobj)):
 			newgnomeports.append([portdir, lines])
 	except IOError:
 		pass
@@ -94,7 +90,7 @@ for dir in currdirs:
 	incremental = ''
 	for component in string.split(dir, '/'):
 		if incremental != '':
-			incremental = incremental + '/'
+			incremental = f'{incremental}/'
 		incremental = incremental + component
 		try:
 			tmp = newcurrdirs.index(incremental)
@@ -108,13 +104,11 @@ for gnomeport in gnomeports:
 		continue
 	matches = []
 	for gnomedir in gnomeport[1]:
-		for dir in currdirs:
-			if (gnomedir == dir):
-				matches.append(dir)
-	if len(matches) > 0:
+		matches.extend(dir for dir in currdirs if (gnomedir == dir))
+	if matches:
 		depends.append([gnomeport[0], matches])
 
-if len(depends) == 0:
+if not depends:
 	sys.stdout.writelines(['No dependencies found (maybe it is not a GNOME port).\n'])
 	sys.exit(0)
 
